@@ -25,7 +25,7 @@ Sign-up for the preview via this [form](https://forms.office.com/r/8Y0zNYU3Pu). 
 In this preview customers will be able to enable a basic backup policy on existing/new virtual machine that meet the supported configurations.
 
 ## Prerequisites
-- **Regions supported:** East Asia, UK South, North Europe and West Central US (Rest by Feb 2025)
+- **Regions supported:** East Asia, UK South, North Europe and West Central US (Rest by Feb 2026)
 - Subscription must be allowlisted as mentioned above
 
 ## Existing VM steps
