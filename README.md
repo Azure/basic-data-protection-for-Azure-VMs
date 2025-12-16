@@ -50,7 +50,7 @@ PATCH https://management.azure.com/subscriptions/{subscriptioId}/resourceGroups/
 - The first RP can be created 3–6 hours once enabled.
 - Retention max = 10 (will be 5 in public preview), frequency = 24 hours.
 > **Note**: The frequency and retention will not be editabled by customers. Please let us know if you have any concerns over this in our feedback [form](https://forms.office.com/r/XHgDNb8zi1).
-- Please do the below steps once you have validated that restore points are created in the mentioned interval and cleaned up so that you dont incur cost:
+- Please complete the steps below after verifying that restore points are being created at the expected intervals and cleaned up to avoid incurring additional costs.
   - Please clean up the restore points created in your subscription.
   - To turn off the feature please use the PATCH API and set it to false so as not to incur cost.
   
