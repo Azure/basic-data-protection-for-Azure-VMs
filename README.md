@@ -3,7 +3,7 @@
 
 We are introducing **basic policy** capability which will allow VM to be backed up once every day achieving an RPO of approximately 24 hours.
 The restore points created will be multi-disks crash consistent restore points.
-> Note: Restore points created in your subscription. Pricing: ~$ 0.05/GB per month. This dependent on snapshot cost in the region. Please check pricing [here](https://azure.microsoft.com/en-us/pricing/details/managed-disks/).
+> **Note** Restore points created in your subscription. Pricing: ~$ 0.05/GB per month. This dependent on snapshot cost in the region. Please check pricing [here](https://azure.microsoft.com/en-us/pricing/details/managed-disks/).
 
 ## Sign up for preview
 Sign-up for the preview via this [form](https://forms.office.com/r/8Y0zNYU3Pu). You will receive an email notification once you are enrolled for the preview. It usually takes 5 business days.
@@ -35,19 +35,43 @@ In this preview customers will be able to enable a basic backup policy on existi
 Use API version **2025-04-01**
 
 ```http
-PATCH https://management.azure.com/.../api-version=2025-04-01
+PATCH https://management.azure.com/subscriptions/{subscriptioId}/resourceGroups/{resourceGroupsName}/providers/Microsoft.Compute/virtualMachines/{vm?api-version=2025-04-01
+```
+```json
 {
   "location": "eastus2euap",
   "properties": {
     "resiliencyProfile": {
-      "periodicRestorePoints": { "isEnabled": true }
+      "periodicRestorePoints": {
+        "isEnabled": true
+      }
     }
   }
 }
 ```
 
 - The first RP can be created 3–6 hours once enabled.
-- Retention max = 10 (will be 5 in public preview), frequency = 24 hours. The frequency and retention will not be editabled by customers. Please let us know if you have any concerns over this in our feedback [form](https://forms.office.com/r/XHgDNb8zi1) .
+- Retention max = 10 (will be 5 in public preview), frequency = 24 hours.
+> **Note**: The frequency and retention will not be editabled by customers. Please let us know if you have any concerns over this in our feedback [form](https://forms.office.com/r/XHgDNb8zi1).
+- Please do the below steps once you have validated that restore points are created in the mentioned interval and cleaned up so that you dont incur cost:
+  - Please clean up the restore points created in your subscription.
+  - To turn off the feature please use the PATCH API and set it to false so as not to incur cost.
+  
+      ```http
+      PATCH https://management.azure.com/subscriptions/{subscriptioId}/resourceGroups/{resourceGroupsName}/providers/Microsoft.Compute/virtualMachines/{vmname}?api-version=2025-04-01
+      ```
+      ```json
+      {
+        "location": "eastus2euap",
+        "properties": {
+          "resiliencyProfile": {
+            "periodicRestorePoints": {
+              "isEnabled": false
+            }
+          }
+        }
+      }
+      ```
 
 
 ## Comparison between Azure Backup policies and Basic data protection
