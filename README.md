@@ -8,9 +8,6 @@ The restore points created will be multi-disks crash consistent restore points.
 ## Sign up for preview
 Sign-up for the preview via this [form](https://forms.office.com/r/8Y0zNYU3Pu). You will receive an email notification once you are enrolled for the preview. It usually takes 5 business days.
 
-## Feedback
-Please fill up this feedback [form](https://forms.office.com/r/XHgDNb8zi1) as you try out the preview. Your feedback is crucial to help us improve our product.
-
 ## Supported configurations
 - VMs using SKUs that support premium storage
 - Single instance Virtual machines
@@ -72,6 +69,8 @@ PATCH https://management.azure.com/subscriptions/{subscriptioId}/resourceGroups/
         }
       }
       ```
+## Feedback
+Please fill up this feedback [form](https://forms.office.com/r/XHgDNb8zi1) as you try out the preview. Your feedback is crucial to help us improve our product.
 
 
 ## Comparison between Azure Backup policies and Basic data protection
