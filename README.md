@@ -55,10 +55,10 @@ In this preview customers will be able to enable a basic backup policy on existi
 
 #### Prerequisites
 
-- Azure PowerShell module (Az.Accounts) installed
+- Azure PowerShell module (Az.Accounts, Az.Compute) installed
 
   ```powershell
-  Install-Module -Name Az.Accounts -Scope CurrentUser
+  Install-Module -Name Az.Accounts, Az.Compute -Scope CurrentUser
   ```
 
 - Authenticated to Azure
@@ -69,7 +69,7 @@ In this preview customers will be able to enable a basic backup policy on existi
 
 #### Step-by-step Instructions
 
-1. **Download the script**: Download the `Enable-BasicVMBackup.ps1` script from this repository.
+1. **Download the script**: Download the [Enable-BasicVMBackup.ps1](./Enable-BasicVMBackup.ps1) script from this repository.
 
 2. **Run the script to enable basic backup protection**
 
