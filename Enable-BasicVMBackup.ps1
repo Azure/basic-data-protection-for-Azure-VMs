@@ -30,9 +30,10 @@
     Disables basic backup protection for the specified VM.
 
 .NOTES
-    - Requires Azure PowerShell module (Az.Accounts)
+    - Requires Azure PowerShell modules (Az.Accounts, Az.Compute)
     - User must be authenticated to Azure before running this script
     - API Version: 2025-04-01
+    - VM size must support Premium Storage
     - First restore point can be created 3-6 hours after enabling
     - Retention: max 10 restore points, frequency: 24 hours
 #>
@@ -62,14 +63,20 @@ param(
 # Set API version
 $apiVersion = "2025-04-01"
 
-# Check if Az.Accounts module is available
+# Check if required modules are available
 if (-not (Get-Module -ListAvailable -Name Az.Accounts)) {
     Write-Error "Az.Accounts module is not installed. Please install it using: Install-Module -Name Az.Accounts"
     exit 1
 }
 
-# Import the module
+if (-not (Get-Module -ListAvailable -Name Az.Compute)) {
+    Write-Error "Az.Compute module is not installed. Please install it using: Install-Module -Name Az.Compute"
+    exit 1
+}
+
+# Import the modules
 Import-Module Az.Accounts -ErrorAction Stop
+Import-Module Az.Compute -ErrorAction Stop
 
 # Check if user is logged in to Azure
 try {
@@ -85,6 +92,38 @@ try {
 } catch {
     Write-Error "Failed to authenticate to Azure: $_"
     exit 1
+}
+
+# Validate VM configuration - Check if VM size supports Premium Storage
+if ($Enable) {
+    Write-Host "`nValidating VM configuration..." -ForegroundColor Yellow
+    
+    try {
+        # Get VM details
+        $vm = Get-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -ErrorAction Stop
+        
+        Write-Host "VM Size: $($vm.HardwareProfile.VmSize)" -ForegroundColor Gray
+        Write-Host "VM Location: $($vm.Location)" -ForegroundColor Gray
+        
+        # Check if VM size supports Premium Storage
+        $capabilities = (Get-AzComputeResourceSku -Location $vm.Location | Where-Object { 
+            $_.ResourceType -eq 'virtualMachines' -and $_.Name -eq $vm.HardwareProfile.VmSize 
+        }).Capabilities
+        
+        $premiumIOSupported = ($capabilities | Where-Object { $_.Name -eq 'PremiumIO' }).Value
+        
+        if ($premiumIOSupported -ne 'True') {
+            Write-Error "VM size '$($vm.HardwareProfile.VmSize)' does not support Premium Storage. Basic backup protection requires a VM size that supports Premium Storage."
+            Write-Host "`nPlease use a VM size from the following series: D, DS, E, ES, F, FS, G, GS, L, LS, M, or N series" -ForegroundColor Yellow
+            exit 1
+        }
+        
+        Write-Host "✓ VM size supports Premium Storage" -ForegroundColor Green
+        
+    } catch {
+        Write-Error "Failed to validate VM configuration: $_"
+        exit 1
+    }
 }
 
 # Build the API endpoint URL
