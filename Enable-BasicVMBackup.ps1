@@ -5,7 +5,7 @@
 	File:		Enable-BasicVMBackup.ps1
 	Purpose:	Enable or disable basic backup protection for Azure VMs via Azure Management API
 	Pre-Reqs:	Windows PowerShell version 7.2+ and Azure PowerShell Module version 12.2+ 
-	Version: 	3.0.1
+	Version: 	1.0.0
 	============================================================================================================
 
 	DISCLAIMER
