@@ -3,7 +3,7 @@
 
 We are introducing **basic policy** capability which will allow VM to be backed up once every day achieving an RPO of approximately 24 hours.
 The restore points created will be multi-disks crash consistent restore points.
-> **Note** Restore points created in your subscription. Pricing: ~$ 0.05/GB per month. This dependent on snapshot cost in the region. Please check pricing [here](https://azure.microsoft.com/en-us/pricing/details/managed-disks/).
+> **Note** Restore points created in your subscription. Pricing: ~$ 0.05/GB per month. This dependent on snapshot cost in the region. Please check pricing [here](https://azure.microsoft.com/pricing/details/managed-disks/).
 
 ## Pre-requisites
 
@@ -20,17 +20,20 @@ VM size family should support premium storage.    |    See command below
 (Get-AzComputeResourceSku -Location "eastus" | Where-Object { $_.ResourceType -eq 'virtualMachines' -and $_.Name -eq 'Standard_D2s_v3' }).Capabilities | Where-Object { $_.Name -eq 'PremiumIO' } | Select-Object -ExpandProperty Value
 ```
 
-## Unsupported configurations
+## Currently unsupported configurations
 
-Virtual machines (VMs) with following configurations are currently not supported:
-
-- VMs using Ephemeral OS disks
-- VMs using write accelerated
-- VMs using shared disks
-- VMSS with Uniform orchestration
-- VMs using Premium SSD v2 disks (To be supported from public preview)
-- VMs using Ultra disks (To be supported from public preview)
-- Single instance VM within VMSS flex orchestration (To be supported from public preview)
+Configuration | Supported
+-|-
+[Premium Storage](https://learn.microsoft.com/azure/virtual-machines/premium-storage-performance)    |    Supported
+[Premium Storage caching](https://learn.microsoft.com/azure/virtual-machines/premium-storage-performance)    |    Supported
+[Live Migration](https://learn.microsoft.com/azure/virtual-machines/maintenance-and-updates)    |    Supported
+[Accelerated Networking](https://learn.microsoft.com/azure/virtual-network/create-vm-accelerated-networking-cli)    |    Supported
+[Ephemeral OS Disk](https://learn.microsoft.com/azure/virtual-machines/ephemeral-os-disks)    |    Not Supported
+[Write accelerator](https://learn.microsoft.com/azure/virtual-machines/how-to-enable-write-accelerator)    |    Not Supported
+[Shared disk](https://learn.microsoft.com/azure/virtual-machines/disks-shared)    |    Not Supported
+[VM scale sets (Uniform or Flex)](https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview)    |    Not Supported
+[Premium SSD v2 disks](https://learn.microsoft.com/azure/virtual-machines/disks-deploy-premium-v2?tabs=azure-cli)    |    Not Supported
+[Ultra SSD disks](https://learn.microsoft.com/azure/virtual-machines/disks-enable-ultra-ssd?tabs=azure-portal)    |    Not Supported
 
 ## Get started
 
@@ -171,7 +174,7 @@ For users who prefer direct REST API calls, follow these detailed steps.
 
    ```powershell
    $token = (az account get-access-token --resource https://management.azure.com --query accessToken -o tsv)
-   $uri = "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/virtualMachines/$VM_NAME?api-version=2025-04-01"
+   $uri = "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/virtualMachines/$($VM_NAME)?api-version=2025-04-01"
    $headers = @{
        "Authorization" = "Bearer $token"
        "Content-Type" = "application/json"
