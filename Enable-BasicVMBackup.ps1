@@ -122,6 +122,32 @@ try {
     exit 1
 }
 
+# Validate feature flag registration
+Write-Host "`nValidating feature flag registration..." -ForegroundColor Yellow
+try {
+    $featureName = "PeriodicRestorePointResiliencyProfilePreview"
+    $providerNamespace = "Microsoft.Compute"
+    
+    $feature = Get-AzProviderFeature -FeatureName $featureName -ProviderNamespace $providerNamespace -ErrorAction Stop
+    
+    if ($feature.RegistrationState -ne "Registered") {
+        Write-Error "Feature flag '$providerNamespace\$featureName' is not registered on subscription '$SubscriptionId'."
+        Write-Host "`nCurrent registration state: $($feature.RegistrationState)" -ForegroundColor Yellow
+        Write-Host "`nTo register this feature, run the following command:" -ForegroundColor Yellow
+        Write-Host "  Register-AzProviderFeature -FeatureName '$featureName' -ProviderNamespace '$providerNamespace'" -ForegroundColor Cyan
+        Write-Host "`nNote: Feature registration can take several minutes to complete." -ForegroundColor Yellow
+        Write-Host "Check status with:" -ForegroundColor Yellow
+        Write-Host "  Get-AzProviderFeature -FeatureName '$featureName' -ProviderNamespace '$providerNamespace'" -ForegroundColor Cyan
+        exit 1
+    }
+    
+    Write-Host "✓ Feature flag '$providerNamespace\$featureName' is registered" -ForegroundColor Green
+} catch {
+    Write-Error "Failed to validate feature flag registration: $_"
+    Write-Host "`nPlease ensure the feature flag is registered before proceeding." -ForegroundColor Yellow
+    exit 1
+}
+
 # Get VM details and derive location
 Write-Host "`nRetrieving VM information..." -ForegroundColor Yellow
 try {
