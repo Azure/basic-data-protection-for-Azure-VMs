@@ -113,7 +113,6 @@ In this preview customers will be able to enable a basic backup policy on existi
 | SubscriptionId | Yes | Azure subscription ID | Any valid subscription GUID |
 | ResourceGroupName | Yes | Resource group containing the VM | Any existing resource group |
 | VMName | Yes | Virtual machine name | Any existing VM name |
-| Location | Yes | Azure region where VM is located | eastasia, uksouth, northeurope, westcentralus |
 | Enable | Yes | Enable or disable basic backup | $true or $false |
 
 ### Option 2: Using REST API Directly
