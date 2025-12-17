@@ -15,18 +15,15 @@
 .PARAMETER VMName
     The name of the virtual machine.
 
-.PARAMETER Location
-    The Azure region where the VM is located (e.g., eastus2euap, eastasia, uksouth, northeurope, westcentralus).
-
 .PARAMETER Enable
     Boolean parameter. If $true, enables basic backup protection. If $false, disables it.
 
 .EXAMPLE
-    .\Enable-BasicVMBackup.ps1 -SubscriptionId "12345678-1234-1234-1234-123456789012" -ResourceGroupName "myRG" -VMName "myVM" -Location "eastus2euap" -Enable $true
+    .\Enable-BasicVMBackup.ps1 -SubscriptionId "12345678-1234-1234-1234-123456789012" -ResourceGroupName "myRG" -VMName "myVM" -Enable $true
     Enables basic backup protection for the specified VM.
 
 .EXAMPLE
-    .\Enable-BasicVMBackup.ps1 -SubscriptionId "12345678-1234-1234-1234-123456789012" -ResourceGroupName "myRG" -VMName "myVM" -Location "eastus2euap" -Enable $false
+    .\Enable-BasicVMBackup.ps1 -SubscriptionId "12345678-1234-1234-1234-123456789012" -ResourceGroupName "myRG" -VMName "myVM" -Enable $false
     Disables basic backup protection for the specified VM.
 
 .NOTES
@@ -51,10 +48,6 @@ param(
     [Parameter(Mandatory = $true, HelpMessage = "Virtual machine name")]
     [ValidateNotNullOrEmpty()]
     [string]$VMName,
-
-    [Parameter(Mandatory = $true, HelpMessage = "Azure region (supported: eastasia, uksouth, northeurope, westcentralus)")]
-    [ValidateSet("eastasia", "uksouth", "northeurope", "uswestcentral")]
-    [string]$Location,
 
     [Parameter(Mandatory = $true, HelpMessage = "Enable basic backup protection: true to enable, false to disable")]
     [bool]$Enable
@@ -89,41 +82,154 @@ try {
     
     Write-Host "Connected to Azure as: $($context.Account.Id)" -ForegroundColor Green
     Write-Host "Current subscription: $($context.Subscription.Name) ($($context.Subscription.Id))" -ForegroundColor Green
+    
+    # Set the context to the specified subscription
+    if ($context.Subscription.Id -ne $SubscriptionId) {
+        Write-Host "`nSwitching to subscription: $SubscriptionId" -ForegroundColor Yellow
+        Set-AzContext -SubscriptionId $SubscriptionId | Out-Null
+        $context = Get-AzContext
+        Write-Host "Switched to subscription: $($context.Subscription.Name) ($($context.Subscription.Id))" -ForegroundColor Green
+    }
 } catch {
     Write-Error "Failed to authenticate to Azure: $_"
     exit 1
 }
 
-# Validate VM configuration - Check if VM size supports Premium Storage
+# Get VM details and derive location
+Write-Host "`nRetrieving VM information..." -ForegroundColor Yellow
+try {
+    $vm = Get-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -ErrorAction Stop
+    $location = $vm.Location
+    
+    Write-Host "VM Name: $VMName" -ForegroundColor Gray
+    Write-Host "VM Size: $($vm.HardwareProfile.VmSize)" -ForegroundColor Gray
+    Write-Host "VM Location: $location" -ForegroundColor Gray
+    Write-Host "✓ VM found" -ForegroundColor Green
+} catch {
+    Write-Error "Failed to retrieve VM details: $_"
+    exit 1
+}
+
+# Validate supported region
+$supportedRegions = @("eastasia", "uksouth", "northeurope", "westcentralus")
+if ($location -notin $supportedRegions) {
+    Write-Error "VM location '$location' is not supported. Supported regions: $($supportedRegions -join ', ')"
+    Write-Host "`nPlease use a VM in one of the supported regions." -ForegroundColor Yellow
+    exit 1
+}
+Write-Host "✓ VM is in a supported region" -ForegroundColor Green
+
+# Validate VM configuration when enabling
 if ($Enable) {
     Write-Host "`nValidating VM configuration..." -ForegroundColor Yellow
     
+    $validationErrors = @()
+    
+    # Check 1: VM size supports Premium Storage
     try {
-        # Get VM details
-        $vm = Get-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -ErrorAction Stop
-        
-        Write-Host "VM Size: $($vm.HardwareProfile.VmSize)" -ForegroundColor Gray
-        Write-Host "VM Location: $($vm.Location)" -ForegroundColor Gray
-        
-        # Check if VM size supports Premium Storage
-        $capabilities = (Get-AzComputeResourceSku -Location $vm.Location | Where-Object { 
+        $capabilities = (Get-AzComputeResourceSku -Location $location | Where-Object { 
             $_.ResourceType -eq 'virtualMachines' -and $_.Name -eq $vm.HardwareProfile.VmSize 
         }).Capabilities
         
         $premiumIOSupported = ($capabilities | Where-Object { $_.Name -eq 'PremiumIO' }).Value
         
         if ($premiumIOSupported -ne 'True') {
-            Write-Error "VM size '$($vm.HardwareProfile.VmSize)' does not support Premium Storage. Basic backup protection requires a VM size that supports Premium Storage."
-            Write-Host "`nPlease use a VM size from the following series: D, DS, E, ES, F, FS, G, GS, L, LS, M, or N series" -ForegroundColor Yellow
-            exit 1
+            $validationErrors += "VM size '$($vm.HardwareProfile.VmSize)' does not support Premium Storage"
+        } else {
+            Write-Host "✓ VM size supports Premium Storage" -ForegroundColor Green
         }
-        
-        Write-Host "✓ VM size supports Premium Storage" -ForegroundColor Green
-        
     } catch {
-        Write-Error "Failed to validate VM configuration: $_"
+        $validationErrors += "Failed to check Premium Storage support: $_"
+    }
+    
+    # Check 2: Ephemeral OS disk
+    if ($vm.StorageProfile.OsDisk.DiffDiskSettings -and $vm.StorageProfile.OsDisk.DiffDiskSettings.Option -eq 'Local') {
+        $validationErrors += "VM is using Ephemeral OS disk (not supported)"
+    } else {
+        Write-Host "✓ VM is not using Ephemeral OS disk" -ForegroundColor Green
+    }
+    
+    # Check 3: Write Accelerator on any disk
+    $writeAccelEnabled = $false
+    if ($vm.StorageProfile.OsDisk.WriteAcceleratorEnabled) {
+        $writeAccelEnabled = $true
+    }
+    foreach ($dataDisk in $vm.StorageProfile.DataDisks) {
+        if ($dataDisk.WriteAcceleratorEnabled) {
+            $writeAccelEnabled = $true
+            break
+        }
+    }
+    if ($writeAccelEnabled) {
+        $validationErrors += "VM is using Write Accelerator (not supported)"
+    } else {
+        Write-Host "✓ VM is not using Write Accelerator" -ForegroundColor Green
+    }
+    
+    # Check 4: Shared disks
+    $hasSharedDisks = $false
+    foreach ($dataDisk in $vm.StorageProfile.DataDisks) {
+        if ($dataDisk.ManagedDisk) {
+            $diskDetails = Get-AzDisk -ResourceGroupName $ResourceGroupName -DiskName $dataDisk.Name -ErrorAction SilentlyContinue
+            if ($diskDetails -and $diskDetails.MaxShares -gt 1) {
+                $hasSharedDisks = $true
+                break
+            }
+        }
+    }
+    if ($hasSharedDisks) {
+        $validationErrors += "VM is using shared disks (not supported)"
+    } else {
+        Write-Host "✓ VM is not using shared disks" -ForegroundColor Green
+    }
+    
+    # Check 5: Premium SSD v2 or Ultra disks
+    $hasUnsupportedDiskTypes = $false
+    $unsupportedDiskType = ""
+    
+    foreach ($dataDisk in $vm.StorageProfile.DataDisks) {
+        if ($dataDisk.ManagedDisk) {
+            $diskDetails = Get-AzDisk -ResourceGroupName $ResourceGroupName -DiskName $dataDisk.Name -ErrorAction SilentlyContinue
+            if ($diskDetails) {
+                if ($diskDetails.Sku.Name -eq 'PremiumV2_LRS') {
+                    $hasUnsupportedDiskTypes = $true
+                    $unsupportedDiskType = "Premium SSD v2"
+                    break
+                }
+                if ($diskDetails.Sku.Name -like 'Ultra*') {
+                    $hasUnsupportedDiskTypes = $true
+                    $unsupportedDiskType = "Ultra disk"
+                    break
+                }
+            }
+        }
+    }
+    
+    if ($hasUnsupportedDiskTypes) {
+        $validationErrors += "VM is using $unsupportedDiskType (not supported - will be supported in public preview)"
+    } else {
+        Write-Host "✓ VM is not using Premium SSD v2 or Ultra disks" -ForegroundColor Green
+    }
+    
+    # Check 6: VMSS association
+    if ($vm.VirtualMachineScaleSet) {
+        $validationErrors += "VM is part of a Virtual Machine Scale Set (not supported - Flex orchestration will be supported in public preview)"
+    } else {
+        Write-Host "✓ VM is not part of a VMSS" -ForegroundColor Green
+    }
+    
+    # Report validation errors
+    if ($validationErrors.Count -gt 0) {
+        Write-Host "`n✗ Validation Failed" -ForegroundColor Red
+        Write-Host "`nThe following configuration issues were found:" -ForegroundColor Red
+        foreach ($singleError in $validationErrors) {
+            Write-Host "  - $singleError" -ForegroundColor Red
+        }
+        Write-Host "`nPlease review the unsupported configurations in the documentation." -ForegroundColor Yellow
         exit 1
     }
+    
+    Write-Host "`n✓ All validation checks passed" -ForegroundColor Green
 }
 
 # Build the API endpoint URL
@@ -131,7 +237,7 @@ $uri = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroup
 
 # Prepare the request body
 $body = @{
-    location = $Location
+    location = $location
     properties = @{
         resiliencyProfile = @{
             periodicRestorePoints = @{
@@ -144,7 +250,16 @@ $body = @{
 # Get access token
 try {
     $token = Get-AzAccessToken -ResourceUrl "https://management.azure.com"
-    $accessToken = $token.Token
+    
+    # Handle both string and SecureString token types
+    if ($token.Token -is [System.Security.SecureString]) {
+        # Convert SecureString to plain text
+        $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($token.Token)
+        $accessToken = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+    } else {
+        $accessToken = $token.Token
+    }
 } catch {
     Write-Error "Failed to get access token: $_"
     exit 1
@@ -161,7 +276,7 @@ $action = if ($Enable) { "Enabling" } else { "Disabling" }
 Write-Host "`n$action basic backup protection for VM: $VMName" -ForegroundColor Cyan
 Write-Host "Subscription ID: $SubscriptionId"
 Write-Host "Resource Group: $ResourceGroupName"
-Write-Host "Location: $Location"
+Write-Host "Location: $location"
 Write-Host "`nRequest Body:"
 Write-Host $body -ForegroundColor Gray
 
