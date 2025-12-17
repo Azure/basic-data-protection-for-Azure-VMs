@@ -1,9 +1,9 @@
 
-# (Private Preview) Basic backup protection for Azure Virtual machines (VMs)
+# (Private Preview) Basic data protection for Azure Virtual machines (VMs)
 
-We are introducing **basic policy** capability which will allow VM to be backed up once every day achieving an RPO of approximately 24 hours.
+We are introducing **Basic backup policy** which will allow VM to be backed up once every day achieving an RPO of approximately 24 hours.
 The restore points created will be multi-disks crash consistent restore points.
-> **Note** Restore points created in your subscription. Pricing: ~$ 0.05/GB per month. This dependent on snapshot cost in the region. Please check pricing [here](https://azure.microsoft.com/pricing/details/managed-disks/).
+> **Note** Restore points created in your subscription. Pricing: ~$ 0.05/GB per month. This dependent on snapshot cost in the region. Please check [snapshot pricing](https://azure.microsoft.com/pricing/details/managed-disks/).
 
 ## Pre-requisites
 
