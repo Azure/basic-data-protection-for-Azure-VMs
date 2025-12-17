@@ -9,7 +9,7 @@ The restore points created will be multi-disks crash consistent restore points.
 
 Pre-requisite    |    Description
 -|-
-Sign up for preview    |    Sign-up for the preview via this [form](https://aka.ms/VMBasicProtectionPreview), short-link **https://aka.ms/VMBasicProtectionPreview**. You will receive an email notification once you are enrolled for the preview. It usually takes 5 business days.
+Sign up for preview    |    Sign-up for the preview via this [form](https://aka.ms/VMBasicProtectionPreview). You will receive an email notification once you are enrolled for the preview. It usually takes 5 business days.
 Single instance VMs    |    VMs which are not associated with [VM scale sets (Uniform or Flex)](https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview).
 Supported regions    |    East Asia, UK South, North Europe and West Central US (Rest by Feb 2026)
 VM size family should support premium storage.    |    See command below
@@ -40,15 +40,15 @@ In this preview customers will be able to enable a basic backup policy on existi
 
 ### Option 1: Using PowerShell Script (Recommended)
 
-**IMPORTANT DISCLAIMER**
-
-This script is not supported under any Microsoft standard support program or service.
-
-This script is provided AS IS without warranty of any kind. Microsoft further disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a particular purpose.
-
-The entire risk arising out of the use or performance of the script and documentation remains with you. In no event shall Microsoft, its authors, or anyone else involved in the creation, production, or delivery of the script be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or other pecuniary loss) arising out of the use of or inability to use the sample scripts or documentation, even if Microsoft has been advised of the possibility of such damages.
-
-We provide a PowerShell script wrapper that simplifies enabling/disabling basic backup protection.
+> **IMPORTANT DISCLAIMER**
+>
+> This script is not supported under any Microsoft standard support program or service.
+>
+> This script is provided AS IS without warranty of any kind. Microsoft further disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a particular purpose.
+>
+> The entire risk arising out of the use or performance of the script and documentation remains with you. In no event shall Microsoft, its authors, or anyone else involved in the creation, production, or delivery of the script be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or other pecuniary loss) arising out of the use of or inability to use the sample scripts or documentation, even if Microsoft has been advised of the possibility of such damages.
+>
+> We provide a PowerShell script wrapper that simplifies enabling/disabling basic backup protection.
 
 #### Prerequisites
 
