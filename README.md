@@ -11,7 +11,7 @@ Pre-requisite    |    Description
 -|-
 Sign up for preview    |    Sign-up for the preview via this [form](https://aka.ms/VMBasicProtectionPreview), short-link **https://aka.ms/VMBasicProtectionPreview**. You will receive an email notification once you are enrolled for the preview. It usually takes 5 business days.
 Single instance VMs    |    VMs which are not associated with [VM scale sets (Uniform or Flex)](https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview).
-VM size family should support premium storage.    |    You can check using Azure PowerShell command `(Get-AzComputeResourceSku -Location "eastus" | Where-Object { $_.ResourceType -eq 'virtualMachines' -and $_.Name -eq 'Standard_D2s_v3' }).Capabilities | Where-Object { $_.Name -eq 'PremiumIO' } | Select-Object -ExpandProperty Value`
+VM size family should support premium storage.    |    You can check using Azure PowerShell command `(Get-AzComputeResourceSku -Location "eastus" &#124; Where-Object { $_.ResourceType -eq 'virtualMachines' -and $_.Name -eq 'Standard_D2s_v3' }).Capabilities &#124; Where-Object { $_.Name -eq 'PremiumIO' } &#124; Select-Object -ExpandProperty Value`
 Supported regions    |    East Asia, UK South, North Europe and West Central US (Rest by Feb 2026)
 
 ## Unsupported configurations
