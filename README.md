@@ -12,7 +12,7 @@ Pre-requisite    |    Description
 Sign up for preview    |    Sign-up for the preview via this [form](https://aka.ms/VMBasicProtectionPreview). You will receive an email notification once you are enrolled for the preview. It usually takes 5 business days.
 Single instance VMs    |    VMs which are not associated with [VM scale sets (Uniform or Flex)](https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview).
 Supported regions    |    East Asia, UK South, North Europe and West Central US (Rest by Feb 2026)
-VM size family should support premium storage.    |    See command below
+VM size family should support premium storage.    |    See Azure PowerShell command below. Output `True` indicates support for premium storage.
 
 **Check Premium Storage support:**
 
