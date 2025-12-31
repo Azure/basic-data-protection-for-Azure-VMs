@@ -292,7 +292,7 @@ Please fill up this feedback [form](https://forms.office.com/r/XHgDNb8zi1) as yo
 | Feature | Standard/Enhanced | Basic |
 |--------|-------------------|-------|
 | Used for | Infra + Cyber + Data resiliency | Data resiliency |
-| Target Users | Enterprises, regulated industries | SMB, SMC, cost conscious workloads |
+| Target Workloads | Workloads requiring enterprise-grade backup features | Workloads requiring basic backup with minimal cost and complexity |
 | Scope | Full VM, file/app consistent | VM with supported disks |
 | Consistency | App-consistent and/or crash-consistent | Crash-consistent only |
 | RPO | 4-12 hrs (Enhanced), 24 hrs (Standard) | 24 hrs |
