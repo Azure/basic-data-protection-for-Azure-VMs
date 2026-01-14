@@ -1,9 +1,17 @@
 
 # (Private Preview) Basic data protection for Azure Virtual machines (VMs)
 
-We are introducing **Basic backup policy** which will allow VM to be backed up once every day achieving an RPO of approximately 24 hours.
-The restore points created will be multi-disks crash consistent restore points.
-> **Note** Restore points created in your subscription. Pricing: ~$ 0.05/GB per month. This dependent on snapshot cost in the region. Please check [snapshot pricing](https://azure.microsoft.com/pricing/details/managed-disks/).
+We are introducing **Basic data protection - Lightweight VM resiliency for everyday workloads—providing basic protection that keeps business continuity simple and cost effective**.
+
+## Key features
+
+Feature | Description
+-|-
+Cost advantage | Pay only for snapshot storage, [Pricing](https://azure.microsoft.com/pricing/details/managed-disks/): ~$ 0.05/GB per month, no extra licensing or support fees
+Recovery point objective (RPO) | Rapid recovery with up to 24-hour Recovery Point Objective (RPO)
+Consistency | Multi-disks Crash-consistent snapshots for VM configuration and attached disks
+Retention | 5-day retention with automatic pruning
+Sovereignty | Restore points created in your subscription.
 
 ## Pre-requisites
 
@@ -11,8 +19,13 @@ Pre-requisite    |    Description
 -|-
 Sign up for preview    |    Sign-up for the preview via this [form](https://aka.ms/VMBasicProtectionPreview). You will receive an email notification once you are enrolled for the preview. It usually takes 5 business days.
 Single instance VMs    |    VMs which are not associated with [VM scale sets (Uniform or Flex)](https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview).
-Supported regions    |    East Asia, UK South, North Europe and West Central US (Rest by Feb 2026)
-VM size family should support premium storage.    |    See Azure PowerShell command below. Output `True` indicates support for premium storage.
+Supported regions    |    East Asia, UK South, North Europe and West Central US (Remaining public cloud regions by end of Feb 2026)<sup>(1)</sup>
+VM size family should support premium storage.<sup>(2)</sup>    |    See Azure PowerShell command below. Output `True` indicates support for premium storage.
+
+> **NOTE**:
+> 
+> <sup>(1)</sup> Support for government & sovereign cloud regions will be added in next release.
+> <sup>(2)</sup> Majority of VM size families will be supported in next release without dependency on premium storage.
 
 **Check Premium Storage support:**
 
@@ -277,7 +290,7 @@ Content-Type: application/json
 - The first RP can be created 3–6 hours once enabled.
 - Retention max = 10 (will be 5 in public preview), frequency = 24 hours.
 
-> **Note**: The frequency and retention will not be editabled by customers. Please let us know if you have any concerns over this in our feedback [form](https://forms.office.com/r/XHgDNb8zi1).
+> **Note**: The frequency and retention will not be editabled by customers. Please let us know if you have any concerns over this in our [feedback form](https://aka.ms/VMBasicProtectionFeedback).
 
 - Please complete the steps below after verifying that restore points are being created at the expected intervals and cleaned up to avoid incurring additional costs.
   - Please clean up the restore points created in your subscription.
@@ -285,16 +298,17 @@ Content-Type: application/json
 
 ## Feedback
 
-Please fill up this feedback [form](https://forms.office.com/r/XHgDNb8zi1) as you try out the preview. Your feedback is crucial to help us improve our product.
+Please fill up this [feedback form](https://aka.ms/VMBasicProtectionFeedback) as you try out the preview. Your feedback is crucial to help us improve our product.
 
 ## Comparison between Azure Backup policies and Basic data protection
 
-| Feature | Standard/Enhanced | Basic |
-|--------|-------------------|-------|
-| Used for | Infra + Cyber + Data resiliency | Data resiliency |
-| Target Workloads | Workloads requiring enterprise-grade backup features | Workloads requiring basic backup with minimal cost and complexity |
-| Scope | Full VM, file/app consistent | VM with supported disks |
-| Consistency | App-consistent and/or crash-consistent | Crash-consistent only |
-| RPO | 4-12 hrs (Enhanced), 24 hrs (Standard) | 24 hrs |
-| Retention | Days-years | Fixed 5 days |
-| Pricing | Vault-based + license | Snapshot (~$0.05/GB/mo) |
+Feature | Basic data protection | Azure Backup
+-|-|-
+Use case    |    Data resiliency    | Data + Infra + Cyber resiliency
+Pricing    |    Snapshot (~$0.05/GB/mo), **40% cheaper than enterprise-grade backup solutions**    |    Vault license + Vault storage + Snapshot
+Recovery point objective (RPO)    |    24 hours.    |    4 - 24 hours, multiple backups per day.
+Retention    |    5 days.    |    7 days to 99 years.
+Consistency    |    Crash-consistent only.    |    App & Crash consistent
+Restore granularity    |    Disk-level restore    |    File / Disk / VM-level restore.
+Supported resources    |    VM only    | VM, Azure Kubernetes (AKS), File storage, database.
+Target workloads    | Workloads requiring basic backup with minimal cost and complexity    |    Workloads requiring enterprise-grade backup features
