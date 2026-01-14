@@ -24,10 +24,10 @@ VM size family should support premium storage.<sup>(2)</sup>    |    See Azure P
 
 > **NOTE**:
 > 
-> <sup>(1)</sup> Support for government & sovereign cloud regions will be added in next release.
-> <sup>(2)</sup> Majority of VM size families will be supported in next release without dependency on premium storage.
+> - <sup>(1)</sup> Support for government & sovereign cloud regions will be added in next release.
+> - <sup>(2)</sup> Majority of VM size families will be supported in next release without dependency on premium storage.
 
-**Check Premium Storage support:**
+**Check Premium Storage support:<sup>(2)</sup>**
 
 ```powershell
 (Get-AzComputeResourceSku -Location "eastus" | Where-Object { $_.ResourceType -eq 'virtualMachines' -and $_.Name -eq 'Standard_D2s_v3' }).Capabilities | Where-Object { $_.Name -eq 'PremiumIO' } | Select-Object -ExpandProperty Value
