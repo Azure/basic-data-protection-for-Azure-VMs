@@ -312,3 +312,25 @@ Consistency    |    Crash-consistent only.    |    App & Crash consistent
 Restore granularity    |    Disk-level restore    |    File / Disk / VM-level restore.
 Supported resources    |    VM only    | VM, Azure Kubernetes (AKS), File storage, database.
 Target workloads    | Workloads requiring basic backup with minimal cost and complexity    |    Workloads requiring enterprise-grade backup features
+
+## Upgrade from Basic data protection to Azure Backup
+
+As your protection requirements expand, you can seamlessly upgrade from Basic Data Protection to [Azure Backup](http://aka.ms/AzureBackup) for advanced capabilities:
+
+**Enhanced Recovery Options**
+- Multiple recovery points per day for lower RPO requirements
+- Longer retention policies and lifecycle management aligned with compliance standards
+- Application-consistent backups alongside crash-consistent snapshots
+
+**Enterprise-Grade Security & Compliance**
+- Integrated threat detection through Microsoft Defender for Cloud
+- Malware and ransomware detection
+- Cross-region restore capabilities for disaster recovery
+- Compliance with industry-specific retention and governance policies
+
+**Operational Flexibility**
+- Support for multiple resource types (VMs, databases, file storage, Kubernetes)
+- Granular file and application-level restore options
+- Policy-driven backup management at scale
+
+This approach allows infrastructure and backup administrators to start with cost-effective basic protection and expand to enterprise-grade solutions without reconfiguring their workloads, ensuring continuity as your infrastructure grows.
