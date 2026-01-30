@@ -296,6 +296,186 @@ Content-Type: application/json
   - Please clean up the restore points created in your subscription.
   - To turn off the feature please use the PowerShell script or PATCH API and set it to false so as not to incur cost.
 
+## Restore Existing VM from Restore Point
+
+We provide a PowerShell orchestration script that automates the complete VM restore process from a restore point. This script handles all the manual steps required to restore disks and attach them to your VM in a single execution.
+
+### Prerequisites
+
+- Azure PowerShell module (Az.Accounts, Az.Compute) installed
+
+  ```powershell
+  Install-Module -Name Az.Accounts, Az.Compute -Scope CurrentUser
+  ```
+
+- Authenticated to Azure
+
+  ```powershell
+  Connect-AzAccount
+  ```
+
+- VM must have at least one restore point created (allow 3-6 hours after enabling Basic data protection)
+
+### Step-by-step Instructions
+
+1. **Download the script**: Download the [Restore-VMFromRestorePoint.ps1](./Restore-VMFromRestorePoint.ps1) script from this repository.
+
+2. **Run the script to restore VM from latest restore point**
+
+   ```powershell
+   .\Restore-VMFromRestorePoint.ps1 `
+       -SubscriptionId "your-subscription-id" `
+       -ResourceGroupName "your-resource-group" `
+       -VMName "your-vm-name"
+   ```
+
+   This will:
+   - Automatically discover the restore point collection
+   - Select the latest restore point
+   - Restore all disks (OS and data disks) with "-restored" suffix
+   - Deallocate the VM
+   - Detach existing data disks
+   - Attach restored data disks
+   - Swap OS disk with restored OS disk
+   - Start the VM
+
+3. **Restore from a specific restore point**
+
+   ```powershell
+   .\Restore-VMFromRestorePoint.ps1 `
+       -SubscriptionId "your-subscription-id" `
+       -ResourceGroupName "your-resource-group" `
+       -VMName "your-vm-name" `
+       -RestorePointName "your-restore-point-name"
+   ```
+
+4. **Keep original disks after restore**
+
+   ```powershell
+   .\Restore-VMFromRestorePoint.ps1 `
+       -SubscriptionId "your-subscription-id" `
+       -ResourceGroupName "your-resource-group" `
+       -VMName "your-vm-name" `
+       -KeepOriginalDisks
+   ```
+
+5. **Preview changes without executing (WhatIf)**
+
+   ```powershell
+   .\Restore-VMFromRestorePoint.ps1 `
+       -SubscriptionId "your-subscription-id" `
+       -ResourceGroupName "your-resource-group" `
+       -VMName "your-vm-name" `
+       -WhatIf
+   ```
+
+### Script Parameters
+
+| Parameter | Required | Description | Default |
+|-----------|----------|-------------|---------|
+| SubscriptionId | Yes | Azure subscription ID | - |
+| ResourceGroupName | Yes | Resource group containing the VM | - |
+| VMName | Yes | Virtual machine name | - |
+| RestorePointCollectionName | No | Restore point collection name (auto-discovered if not specified) | Auto-detected |
+| RestorePointName | No | Specific restore point to use (uses latest if not specified) | Latest restore point |
+| RestoredDiskSuffix | No | Suffix to append to restored disk names | "-restored" |
+| KeepOriginalDisks | No | Keep original disks after restore (otherwise manual cleanup required) | $false |
+| WhatIf | No | Show what would happen without making changes | - |
+
+### Validation After Restore
+
+After the script completes successfully, perform the following validation steps:
+
+1. **Verify VM is running**
+
+   ```powershell
+   Get-AzVM -ResourceGroupName "your-resource-group" -Name "your-vm-name" -Status
+   ```
+
+   Check that the VM status is "VM running"
+
+2. **Verify connectivity**
+
+   - RDP (Windows) or SSH (Linux) to the VM
+   - Ensure you can log in successfully
+
+3. **Verify application functionality**
+
+   - Test your applications running on the VM
+   - Verify services are running as expected
+
+4. **Verify data integrity**
+
+   - Check that all required data is present
+   - Verify database connections and data access
+   - Test file system access on data disks
+
+5. **Verify disk configuration**
+
+   Check that all disks are attached correctly:
+
+   ```powershell
+   $vm = Get-AzVM -ResourceGroupName "your-resource-group" -Name "your-vm-name"
+   
+   # Check OS disk
+   Write-Host "OS Disk: $($vm.StorageProfile.OsDisk.Name)"
+   
+   # Check data disks
+   Write-Host "`nData Disks:"
+   foreach ($disk in $vm.StorageProfile.DataDisks) {
+       Write-Host "  LUN $($disk.Lun): $($disk.Name) - Caching: $($disk.Caching)"
+   }
+   ```
+
+6. **Clean up original disks (if needed)**
+
+   If the restore was successful and you didn't use `-KeepOriginalDisks`, you can delete the original disks to free up storage:
+
+   ```powershell
+   # List disks in the resource group
+   Get-AzDisk -ResourceGroupName "your-resource-group" | 
+       Where-Object { $_.Name -notlike "*-restored" } | 
+       Select-Object Name, DiskSizeGB, DiskState
+   
+   # Delete a specific disk (only if not attached to any VM)
+   Remove-AzDisk -ResourceGroupName "your-resource-group" -DiskName "original-disk-name" -Force
+   ```
+
+### Important Notes
+
+- **Downtime**: The VM will experience downtime during the restore process (typically 5-15 minutes)
+- **Zone Support**: The script automatically handles VMs in availability zones
+- **Backup Original Disks**: Original disks are not automatically deleted. Clean them up manually after verifying the restore
+- **Testing**: Always test the restore process in a non-production environment first
+- **Snapshots**: Consider creating snapshots of current disks before performing a restore if you want an additional safety net
+
+### Troubleshooting
+
+**Issue**: Script cannot find restore point collection
+
+**Solution**: Ensure Basic data protection is enabled and at least one restore point has been created (3-6 hours after enabling)
+
+---
+
+**Issue**: Disk attachment fails due to availability zone mismatch
+
+**Solution**: The script automatically detects and applies the VM's availability zone. Ensure you're using the latest version of the script.
+
+---
+
+**Issue**: VM fails to start after restore
+
+**Solution**: Check Azure Portal for specific error messages. Common issues include:
+- Disk encryption settings mismatch
+- Boot diagnostics configuration
+- Network configuration issues
+
+---
+
+**Issue**: Original disks cannot be deleted
+
+**Solution**: Ensure the disks are fully detached from the VM and no snapshots or other resources are using them.
+
 ## Feedback
 
 Please fill up this [feedback form](https://aka.ms/VMBasicProtectionFeedback) as you try out the preview. Your feedback is crucial to help us improve our product.
