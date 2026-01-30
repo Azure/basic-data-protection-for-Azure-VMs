@@ -421,9 +421,44 @@ Write-Success "Restore point ID captured"
 
 #endregion
 
-#region Step 4: Identify All Disks in Restore Point
+#region Step 4: Capture Current Disk SKUs
 
-Write-StepHeader "STEP 4: Identify All Disks in Restore Point"
+Write-StepHeader "STEP 4: Capture Current Disk SKUs"
+
+try {
+    # Get current OS disk SKU
+    $currentOSDiskName = $vm.StorageProfile.OsDisk.Name
+    $currentOSDisk = Get-AzDisk -ResourceGroupName $ResourceGroupName -DiskName $currentOSDiskName -ErrorAction Stop
+    $osDiskSku = $currentOSDisk.Sku.Name
+    
+    Write-Success "Current OS Disk SKU captured"
+    Write-Detail "OS Disk: $currentOSDiskName"
+    Write-Detail "SKU: $osDiskSku"
+    
+    # Get current data disk SKUs
+    $currentDataDiskSkus = @{}
+    if ($vm.StorageProfile.DataDisks -and $vm.StorageProfile.DataDisks.Count -gt 0) {
+        Write-Info "Capturing data disk SKUs..."
+        foreach ($disk in $vm.StorageProfile.DataDisks) {
+            $dataDisk = Get-AzDisk -ResourceGroupName $ResourceGroupName -DiskName $disk.Name -ErrorAction Stop
+            $currentDataDiskSkus[$disk.Name] = $dataDisk.Sku.Name
+            Write-Detail "Data Disk: $($disk.Name) - SKU: $($dataDisk.Sku.Name)"
+        }
+        Write-Success "Captured SKUs for $($currentDataDiskSkus.Count) data disk(s)"
+    } else {
+        Write-Info "No data disks currently attached"
+    }
+    
+} catch {
+    Write-Error "Failed to capture current disk SKUs: $_"
+    exit 1
+}
+
+#endregion
+
+#region Step 5: Identify All Disks in Restore Point
+
+Write-StepHeader "STEP 5: Identify All Disks in Restore Point"
 
 try {
     $diskRestorePoints = @()
@@ -458,9 +493,9 @@ try {
 
 #endregion
 
-#region Step 5: Restore All Disks
+#region Step 6: Restore All Disks
 
-Write-StepHeader "STEP 5: Restore All Disks"
+Write-StepHeader "STEP 6: Restore All Disks"
 
 $restoredDisks = @{}
 $restoreJobs = @()
@@ -475,11 +510,13 @@ try {
         $restoredOSDiskName = "$osDiskName$RestoredDiskSuffix"
         
         Write-Info "Restoring OS disk: $osDiskName -> $restoredOSDiskName"
+        Write-Detail "Using SKU: $osDiskSku"
         
         $osDiskConfig = New-AzDiskConfig `
             -Location $location `
             -CreateOption Restore `
-            -SourceResourceId $osDiskRestorePoint.DiskRestorePoint.Id
+            -SourceResourceId $osDiskRestorePoint.DiskRestorePoint.Id `
+            -SkuName $osDiskSku
         
         # Apply zone if VM is in an availability zone
         if ($vmZones -and $vmZones.Count -gt 0) {
@@ -499,7 +536,7 @@ try {
                 OriginalName = $osDiskName
             }
             
-            Write-Success "OS disk restored: $restoredOSDiskName"
+            Write-Success "OS disk restored: $restoredOSDiskName (SKU: $osDiskSku)"
             Write-Detail "Disk ID: $($restoredOSDisk.Id)"
         }
     }
@@ -512,12 +549,23 @@ try {
             $dataDiskName = $dataDisk.Name
             $restoredDataDiskName = "$dataDiskName$RestoredDiskSuffix"
             
+            # Get the SKU for this data disk
+            $dataDiskSku = if ($currentDataDiskSkus.ContainsKey($dataDiskName)) {
+                $currentDataDiskSkus[$dataDiskName]
+            } else {
+                # Fallback to Standard_LRS if we can't find the original disk SKU
+                Write-Warning "Could not find SKU for data disk '$dataDiskName', using Standard_LRS as fallback"
+                "Standard_LRS"
+            }
+            
             Write-Info "Restoring data disk: $dataDiskName -> $restoredDataDiskName (LUN: $($dataDisk.Lun))"
+            Write-Detail "Using SKU: $dataDiskSku"
             
             $dataDiskConfig = New-AzDiskConfig `
                 -Location $location `
                 -CreateOption Restore `
-                -SourceResourceId $dataDisk.DiskRestorePoint.Id
+                -SourceResourceId $dataDisk.DiskRestorePoint.Id `
+                -SkuName $dataDiskSku
             
             # Apply zone if VM is in an availability zone
             if ($vmZones -and $vmZones.Count -gt 0) {
@@ -540,7 +588,7 @@ try {
                     WriteAcceleratorEnabled = $dataDisk.WriteAcceleratorEnabled
                 }
                 
-                Write-Success "Data disk restored: $restoredDataDiskName"
+                Write-Success "Data disk restored: $restoredDataDiskName (SKU: $dataDiskSku)"
                 Write-Detail "Disk ID: $($restoredDataDisk.Id)"
             }
         }
@@ -556,9 +604,9 @@ try {
 
 #endregion
 
-#region Step 6: De-allocate VM
+#region Step 7: De-allocate VM
 
-Write-StepHeader "STEP 6: De-allocate VM"
+Write-StepHeader "STEP 7: De-allocate VM"
 
 try {
     $vmStatus = (Get-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -Status).Statuses | 
@@ -583,9 +631,9 @@ try {
 
 #endregion
 
-#region Step 7: Detach Existing Data Disks
+#region Step 8: Detach Existing Data Disks
 
-Write-StepHeader "STEP 7: Detach Existing Data Disks"
+Write-StepHeader "STEP 8: Detach Existing Data Disks"
 
 try {
     # Refresh VM object to get current configuration
@@ -630,9 +678,9 @@ try {
 
 #endregion
 
-#region Step 8: Attach Restored Data Disks
+#region Step 9: Attach Restored Data Disks
 
-Write-StepHeader "STEP 8: Attach Restored Data Disks"
+Write-StepHeader "STEP 9: Attach Restored Data Disks"
 
 try {
     # Refresh VM object
@@ -676,9 +724,9 @@ try {
 
 #endregion
 
-#region Step 9: Swap OS Disk
+#region Step 10: Swap OS Disk
 
-Write-StepHeader "STEP 9: Swap OS Disk with Restored OS Disk"
+Write-StepHeader "STEP 10: Swap OS Disk with Restored OS Disk"
 
 try {
     # Refresh VM object
@@ -716,9 +764,9 @@ try {
 
 #endregion
 
-#region Step 10: Start VM
+#region Step 11: Start VM
 
-Write-StepHeader "STEP 10: Start VM"
+Write-StepHeader "STEP 11: Start VM"
 
 try {
     if ($PSCmdlet.ShouldProcess($VMName, "Start VM")) {
@@ -744,7 +792,7 @@ try {
 #region Cleanup Original Disks
 
 if (-not $KeepOriginalDisks) {
-    Write-StepHeader "STEP 11: Cleanup Original Disks (Optional)"
+    Write-StepHeader "STEP 12: Cleanup Original Disks (Optional)"
     
     Write-Host "`nOriginal disks that can be deleted:" -ForegroundColor Yellow
     Write-Host "  - OS Disk: $originalOSDiskName" -ForegroundColor Gray
