@@ -91,7 +91,6 @@ In this preview customers will be able to enable a basic backup policy on existi
        -SubscriptionId "your-subscription-id" `
        -ResourceGroupName "your-resource-group" `
        -VMName "your-vm-name" `
-       -Location "eastasia" `
        -Enable $true
    ```
 
@@ -110,7 +109,6 @@ In this preview customers will be able to enable a basic backup policy on existi
        -SubscriptionId "your-subscription-id" `
        -ResourceGroupName "your-resource-group" `
        -VMName "your-vm-name" `
-       -Location "eastasia" `
        -Enable $false
    ```
 

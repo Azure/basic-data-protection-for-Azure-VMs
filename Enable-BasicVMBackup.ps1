@@ -164,7 +164,7 @@ try {
 }
 
 # Validate supported region
-$supportedRegions = @("eastasia", "uksouth", "northeurope", "westcentralus")
+$supportedRegions = @("eastasia", "uksouth", "northeurope", "westcentralus", "eastus2", "eastus", "eastus2euap", "centraluseuap")
 if ($location -notin $supportedRegions) {
     Write-Error "VM location '$location' is not supported. Supported regions: $($supportedRegions -join ', ')"
     Write-Host "`nPlease use a VM in one of the supported regions." -ForegroundColor Yellow
@@ -302,14 +302,13 @@ $body = @{
 
 # Get access token
 try {
-    $token = Get-AzAccessToken -ResourceUrl "https://management.azure.com"
+    # Note: ResourceUrl must have trailing slash for Cloud Shell compatibility
+    $token = Get-AzAccessToken -ResourceUrl "https://management.azure.com/"
     
     # Handle both string and SecureString token types
     if ($token.Token -is [System.Security.SecureString]) {
-        # Convert SecureString to plain text
-        $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($token.Token)
-        $accessToken = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+        # Use PowerShell native conversion (works cross-platform unlike Marshal)
+        $accessToken = [System.Net.NetworkCredential]::new('', $token.Token).Password
     } else {
         $accessToken = $token.Token
     }
