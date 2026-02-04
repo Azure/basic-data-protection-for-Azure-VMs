@@ -19,7 +19,7 @@ Pre-requisite    |    Description
 -|-
 Sign up for preview    |    Sign-up for the preview via this [form](https://aka.ms/VMBasicProtectionPreview). You will receive an email notification once you are enrolled for the preview. It usually takes 5 business days.
 Single instance VMs    |    VMs which are not associated with [VM scale sets (Uniform or Flex)](https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview).
-Supported regions    |    East Asia, UK South, North Europe and West Central US (Remaining public cloud regions by end of Feb 2026)<sup>(1)</sup>
+Supported regions    |    East US, East US 2, East US 2 EUAP, Central US EUAP, East Asia, UK South, North Europe and West Central US (Remaining public cloud regions by Mar 2026)<sup>(1)</sup>
 VM size family should support premium storage.<sup>(2)</sup>    |    See Azure PowerShell command below. Output `True` indicates support for premium storage.
 
 > **NOTE**:
@@ -94,7 +94,7 @@ In this preview customers will be able to enable a basic backup policy on existi
        -Enable $true
    ```
 
-   **Supported regions:** `eastasia`, `uksouth`, `northeurope`, `uswestcentral`
+   **Supported regions:** `eastasia`, `uksouth`, `northeurope`, `uswestcentral`, `eastus2`, `eastus`, `eastus2euap`, `centraluseuap`
 
 3. **Verify restore points are being created**
 
