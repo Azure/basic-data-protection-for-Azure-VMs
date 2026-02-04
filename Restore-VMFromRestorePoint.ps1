@@ -315,13 +315,13 @@ try {
         Write-Detail "API URL: $uri"
         
         # Get access token
-        $token = Get-AzAccessToken -ResourceUrl "https://management.azure.com"
+        # Note: ResourceUrl must have trailing slash for Cloud Shell compatibility
+        $token = Get-AzAccessToken -ResourceUrl "https://management.azure.com/"
         
         # Handle both string and SecureString token types
         if ($token.Token -is [System.Security.SecureString]) {
-            $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($token.Token)
-            $accessToken = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+            # Use PowerShell native conversion (works cross-platform unlike Marshal)
+            $accessToken = [System.Net.NetworkCredential]::new('', $token.Token).Password
         } else {
             $accessToken = $token.Token
         }
